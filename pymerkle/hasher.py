@@ -33,7 +33,7 @@ class MerkleHasher:
         self.prefx01 = b'\x01' if self.security else b''
 
 
-    def _consume_bytes(self, buff):
+    def _consume_bytes(self, buff) -> bytes:
         """
         :param buff:
         :type buff: bytes
@@ -52,7 +52,7 @@ class MerkleHasher:
         return hasher.digest()
 
 
-    def hash_empty(self):
+    def hash_empty(self) -> bytes:
         """
         Computes the hash of the empty data without prepending security
         prefixes.
@@ -62,9 +62,20 @@ class MerkleHasher:
         :rtype: bytes
         """
         return self._consume_bytes(b'')
+    
+    def hash_empty_hex(self) -> str:
+        """
+        Computes the hash of the empty data without prepending security
+        prefixes.
+
+        :param buff:
+        :type buff: bytes
+        :rtype: str
+        """
+        return self.hash_empty().hex()
 
 
-    def hash_raw(self, buff):
+    def hash_raw(self, buff: bytes) -> bytes:
         """
         Computes the hash of the provided data without prepending security
         prefixes.
@@ -74,9 +85,20 @@ class MerkleHasher:
         :rtype: bytes
         """
         return self._consume_bytes(buff)
+    
+    def hash_raw_hex(self, buff: bytes) -> str:
+        """
+        Computes the hash of the provided data without prepending security
+        prefixes.
+
+        :param buff:
+        :type buff: bytes
+        :rtype: str
+        """
+        return self.hash_raw(buff).hex()
 
 
-    def hash_buff(self, data):
+    def hash_buff(self, data: bytes) -> bytes:
         """
         Computes the hash of the provided binary data.
 
@@ -87,9 +109,18 @@ class MerkleHasher:
         """
         return self._consume_bytes(self.prefx00 + data)
 
+    def hash_hex(self, data: bytes) -> str:
+        """
+        Computes the hash of the provided binary data and returns it in hexadecimal
+        format.
+
+        :type data: bytes
+        :rtype: str
+        """
+        return self.hash_buff(data).hex()
 
 
-    def hash_pair(self, buff1, buff2):
+    def hash_pair(self, buff1, buff2) -> bytes:
         """
         Computes the hash of the concatenation of the provided binary data.
 
@@ -102,3 +133,17 @@ class MerkleHasher:
         :rtype: bytes
         """
         return self.hashfunc(self.prefx01 + buff1 + buff2).digest()
+    
+    
+    def hash_pair_hex(self, buff1, buff2) -> str:
+        """
+        Computes the hash of the concatenation of the provided binary data and
+        returns it in hexadecimal format.
+
+        :param buff1: left value
+        :type buff1: bytes
+        :param buff2: right value
+        :type buff2: bytes
+        :rtype: str
+        """
+        return self.hash_pair(buff1, buff2).hex()

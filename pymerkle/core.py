@@ -6,6 +6,7 @@ from abc import ABCMeta, abstractmethod
 from collections import deque, namedtuple
 from threading import Lock
 import builtins
+from typing import Any, Union
 
 from cachetools import LRUCache
 
@@ -86,15 +87,18 @@ class BaseMerkleTree(MerkleHasher, metaclass=ABCMeta):
         super().__init__(self.algorithm, self.security)
 
 
-    def _hash_entry(self, data):
+    def _hash_entry(self, data: Any) -> bytes:
         return self.hash_buff(data)
 
+    def _hash_entry_hex(self, data: Any) -> str:
+        return self.hash_hex(data)
 
-    def _hash_nodes(self, lnode, rnode):
+
+    def _hash_nodes(self, lnode, rnode) -> bytes:
         return self.hash_pair(lnode, rnode)
 
 
-    def append_entry(self, data):
+    def append_entry(self, data) -> int:
         """
         Appends a new leaf storing the provided data entry.
 
@@ -105,12 +109,14 @@ class BaseMerkleTree(MerkleHasher, metaclass=ABCMeta):
         """
         buffer = self._encode_entry(data)
         digest = self._hash_entry(buffer)
-        index = self._store_leaf(data, digest)
+        # digest_hex = self._hash_entry_hex(buffer)
+        digest_hex = digest.hex()
+        index = self._store_leaf(data, digest, digest_hex)
 
         return index
 
 
-    def get_leaf(self, index):
+    def get_leaf(self, index: int) -> bytes:
         """
         Returns the leaf hash located at the provided position.
 
@@ -119,9 +125,19 @@ class BaseMerkleTree(MerkleHasher, metaclass=ABCMeta):
         :rtype: bytes
         """
         return self._get_leaf(index)
+    
+    def get_leaf_hex(self, index: int) -> str:
+        """
+        Returns the leaf hash located at the provided position.
+
+        :param index: leaf index counting from one
+        :type index: int
+        :rtype: bytes
+        """
+        return self._get_leaf_hex(index)
 
 
-    def get_size(self):
+    def get_size(self) -> int:
         """
         Returns the current number of leaves.
 
@@ -130,7 +146,7 @@ class BaseMerkleTree(MerkleHasher, metaclass=ABCMeta):
         return self._get_size()
 
 
-    def get_state(self, size=None):
+    def get_state(self, size: Union[int, None] = None) -> bytes:
         """
         Computes the root-hash of the tree corresponding to the provided number
         of leaves.
@@ -144,9 +160,24 @@ class BaseMerkleTree(MerkleHasher, metaclass=ABCMeta):
             size = self._get_size()
 
         return self._get_root(0, size)
+    
+    def get_state_hex(self, size: Union[int, None] = None) -> str:
+        """
+        Computes the root-hash of the tree corresponding to the provided number
+        of leaves.
+
+        :param size: [optional] number of leaves to consider. Defaults to
+            current tree size.
+        :type size: int
+        :rtype: str
+        """
+        if size is None:
+            size = self._get_size()
+
+        return self._get_root(0, size).hex()
 
 
-    def prove_inclusion(self, index, size=None):
+    def prove_inclusion(self, index: int, size: Union[int, None] = None) -> MerkleProof:
         """
         Proves inclusion of the hash located at the provided index against the
         tree corresponding to the provided number of leaves.
@@ -177,7 +208,7 @@ class BaseMerkleTree(MerkleHasher, metaclass=ABCMeta):
                 path)
 
 
-    def prove_consistency(self, size1, size2=None):
+    def prove_consistency(self, size1: int, size2: Union[int, None] = None) -> MerkleProof:
         """
         Proves consistency between the states corresponding to the provided
         sizes.
@@ -239,7 +270,7 @@ class BaseMerkleTree(MerkleHasher, metaclass=ABCMeta):
 
 
     @abstractmethod
-    def _store_leaf(self, data, digest):
+    def _store_leaf(self, data, digest) -> int:
         """
         Should create a new leaf storing the provided data entry along with
         its hash value.
@@ -263,9 +294,19 @@ class BaseMerkleTree(MerkleHasher, metaclass=ABCMeta):
         :rtype: bytes
         """
 
+    @abstractmethod
+    def _get_leaf_hex(self, index):
+        """
+        Should return the hash stored at the specified leaf.
+
+        :param index: leaf index counting from one
+        :type index: int
+        :rtype: bytes
+        """
+
 
     @abstractmethod
-    def _get_leaves(self, offset, width):
+    def _get_leaves(self, offset: int, width: int):
         """
         Should return in respective order the hashes stored by the leaves in
         the specified range.
@@ -279,7 +320,7 @@ class BaseMerkleTree(MerkleHasher, metaclass=ABCMeta):
 
 
     @abstractmethod
-    def _get_size(self):
+    def _get_size(self) -> int:
         """
         Should return the current number of leaves
 
@@ -288,7 +329,7 @@ class BaseMerkleTree(MerkleHasher, metaclass=ABCMeta):
 
 
     @profile
-    def _get_subroot(self, offset, width):
+    def _get_subroot(self, offset: int, width: int):
         """
         Cached subroot computation.
 
@@ -322,7 +363,7 @@ class BaseMerkleTree(MerkleHasher, metaclass=ABCMeta):
 
 
     @profile
-    def _get_subroot_uncached(self, offset, width):
+    def _get_subroot_uncached(self, offset: int, width: int) -> bytes:
         """
         Uncached subroot computation.
 
@@ -356,7 +397,7 @@ class BaseMerkleTree(MerkleHasher, metaclass=ABCMeta):
 
 
     @profile
-    def _get_root(self, start, limit):
+    def _get_root(self, start: int, limit: int) -> bytes:
         """
         Computes the root-hash for the provided leaf range.
 
@@ -392,7 +433,7 @@ class BaseMerkleTree(MerkleHasher, metaclass=ABCMeta):
 
 
     @profile
-    def _inclusion_path(self, start, offset, limit, bit):
+    def _inclusion_path(self, start: int, offset: int, limit: int, bit: int) -> tuple[list[int] | list[None]]:
         """
         Computes the inclusion path for the leaf located at the provided offset
         against the specified leaf range.
@@ -442,7 +483,7 @@ class BaseMerkleTree(MerkleHasher, metaclass=ABCMeta):
 
 
     @profile
-    def _consistency_path(self, start, offset, limit, bit):
+    def _consistency_path(self, start: int, offset: int, limit: int, bit: int) -> tuple[list[int], list[int], list[Any | None]]:
         """
         Computes the consistency path for the state corresponding to the
         provided offset against the specified leaf range
@@ -504,7 +545,7 @@ class BaseMerkleTree(MerkleHasher, metaclass=ABCMeta):
 
 
     @profile
-    def _get_root_naive(self, start, limit):
+    def _get_root_naive(self, start: int, limit: int):
         """
         Computes the root-hash for the provided leaf range.
 

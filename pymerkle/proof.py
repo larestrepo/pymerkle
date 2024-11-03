@@ -1,6 +1,7 @@
 import os
 import json
 from hmac import compare_digest
+from typing import Any
 
 from pymerkle.hasher import MerkleHasher
 
@@ -12,7 +13,7 @@ class InvalidProof(Exception):
     pass
 
 
-def verify_inclusion(base, root, proof):
+def verify_inclusion(base: bytes, root: bytes, proof):
     """
     Verifies the provided Merkle-proof of inclusion against the provided leaf
     hash and tree state.
@@ -30,9 +31,11 @@ def verify_inclusion(base, root, proof):
 
     if not compare_digest(proof.resolve(), root):
         raise InvalidProof('State does not match')
+    
+    return True
 
 
-def verify_consistency(state1, state2, proof):
+def verify_consistency(state1: bytes, state2: bytes, proof):
     """
     Verifies the provided Merkle-proof of consistency against the given states.
 
@@ -50,6 +53,7 @@ def verify_consistency(state1, state2, proof):
     if not compare_digest(proof.resolve(), state2):
         raise InvalidProof('Later state does not match')
 
+    return True
 
 class MerkleProof:
     """
@@ -90,7 +94,7 @@ class MerkleProof:
         return {'algorithm': self.algorithm, 'security': self.security,
                 'size': self.size}
 
-    def serialize(self):
+    def serialize(self) -> dict[str, Any]:
         """
         Returns the JSON representation of the verifiable object.
 

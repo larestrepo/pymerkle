@@ -24,3 +24,5 @@ benchmarks/merkle.db
 profiler/.results/
 *.lprof
 mprofile_*
+merkle.db
+.vscode/

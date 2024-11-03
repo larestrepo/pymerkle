@@ -1,5 +1,7 @@
 import sqlite3
+from typing import Any, Union
 from pymerkle.core import BaseMerkleTree
+import os
 
 
 class SqliteTree(BaseMerkleTree):
@@ -30,7 +32,8 @@ class SqliteTree(BaseMerkleTree):
                 CREATE TABLE IF NOT EXISTS leaf(
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
                     entry BLOB,
-                    hash BLOB
+                    hash_bytes BLOB,
+                    hash_hex BLOB
                 );'''
             self.cur.execute(query)
 
@@ -44,8 +47,15 @@ class SqliteTree(BaseMerkleTree):
     def __exit__(self, *exc):
         self.con.close()
 
+    def delete_db(self):
+        self.con.close()  # Ensure the connection is closed before deleting the file
+        if os.path.exists(self.dbfile):
+            os.remove(self.dbfile)
+            print(f"Database file {self.dbfile} deleted.")
+        else:
+            print(f"Database file {self.dbfile} does not exist.")
 
-    def _encode_entry(self, data):
+    def _encode_entry(self, data: Union[Any, bytes]) -> bytes:
         """
         Returns the binary format of the provided data entry.
 
@@ -53,10 +63,12 @@ class SqliteTree(BaseMerkleTree):
         :type data: bytes
         :rtype: bytes
         """
+        if not isinstance(data, bytes):
+            data.encode('utf-8')
         return data
 
 
-    def _store_leaf(self, data, digest):
+    def _store_leaf(self, data: Any, digest: bytes, digest_hex: str) -> int:
         """
         Creates a new leaf storing the provided data along with its
         hash value.
@@ -68,21 +80,19 @@ class SqliteTree(BaseMerkleTree):
         :returns: index of newly appended leaf counting from one
         :rtype: int
         """
-        if not isinstance(data, bytes):
-            raise ValueError('Provided data is not binary')
 
         cur = self.cur
 
         with self.con:
             query = f'''
-                INSERT INTO leaf(entry, hash) VALUES (?, ?)
+                INSERT INTO leaf(entry, hash_bytes, hash_hex) VALUES (?, ?, ?)
             '''
-            cur.execute(query, (data, digest))
+            cur.execute(query, (data, digest, digest_hex))
 
         return cur.lastrowid
 
 
-    def _get_leaf(self, index):
+    def _get_leaf(self, index: int):
         """
         Returns the hash stored at the specified leaf.
 
@@ -93,12 +103,28 @@ class SqliteTree(BaseMerkleTree):
         cur = self.cur
 
         query = f'''
-            SELECT hash FROM leaf WHERE id = ?
+            SELECT hash_bytes FROM leaf WHERE id = ?
         '''
         cur.execute(query, (index,))
 
         return cur.fetchone()
+    
+    def _get_leaf_hex(self, index: int):
+        """
+        Returns the hash stored at the specified leaf.
 
+        :param index: leaf index counting from one
+        :type index: int
+        :rtype: bytes
+        """
+        cur = self.cur
+
+        query = f'''
+            SELECT hash_hex FROM leaf WHERE id = ?
+        '''
+        cur.execute(query, (index,))
+
+        return cur.fetchone()
 
     def _get_leaves(self, offset, width):
         """
@@ -113,7 +139,26 @@ class SqliteTree(BaseMerkleTree):
         cur = self.cur
 
         query = f'''
-            SELECT hash FROM leaf WHERE id BETWEEN ? AND ?
+            SELECT hash_bytes FROM leaf WHERE id BETWEEN ? AND ?
+        '''
+        cur.execute(query, (offset + 1, offset + width))
+
+        return cur.fetchall()
+    
+    def _get_leaves_hex(self, offset, width):
+        """
+        Returns in respective order the hashes stored by the leaves in the
+        specified range.
+
+        :param offset: starting position counting from zero
+        :type offset: int
+        :param width: number of leaves to consider
+        :type width: int
+        """
+        cur = self.cur
+
+        query = f'''
+            SELECT hash_hex FROM leaf WHERE id BETWEEN ? AND ?
         '''
         cur.execute(query, (offset + 1, offset + width))
 
@@ -163,12 +208,14 @@ class SqliteTree(BaseMerkleTree):
         :type chunksize: int
         """
         _hash_entry = self.hash_buff
+        _hash_entry_hex = self.hash_hex
 
         offset = 0
         chunk = entries[offset: chunksize]
         while chunk:
             hashes = [_hash_entry(data) for data in chunk]
-            yield zip(chunk, hashes)
+            hashes_hex = [_hash_entry_hex(data) for data in chunk]
+            yield zip(chunk, hashes, hashes_hex)
 
             offset += chunksize
             chunk = entries[offset: offset + chunksize]
@@ -190,13 +237,13 @@ class SqliteTree(BaseMerkleTree):
 
         with self.con:
             query = f'''
-                INSERT INTO leaf(entry, hash) VALUES (?, ?)
+                INSERT INTO leaf(entry, hash_bytes, hash_hex) VALUES (?, ?, ?)
             '''
             for chunk in self._hash_per_chunk(entries, chunksize):
                 cur.execute('BEGIN TRANSACTION')
 
-                for (data, digest) in chunk:
-                    cur.execute(query, (data, digest))
+                for (data, digest, hash_hex) in chunk:
+                    cur.execute(query, (data, digest, hash_hex))
 
                 cur.execute('END TRANSACTION')
 

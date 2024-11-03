@@ -6,7 +6,7 @@ authors = ["larestrepo <larestrepomu@gmail.com>"]
 readme = "README.md"
 
 [tool.poetry.dependencies]
-python = "^3.12"
+python = ">=3.11,<3.12"
 cachetools = "^5.5.0"
 boto3 = "^1.35.54"
 

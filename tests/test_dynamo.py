@@ -51,7 +51,7 @@ def test_create_table(dynamodb, aws_credentials):
     )
 
     # Verify the table was created
-    response = dynamodb.describe_table(TableName='leaf')
-    assert response['Table']['TableName'] == 'leaf'
+    response = dynamodb.describe_table(TableName='default_app-leaf-dev')
+    assert response['Table']['TableName'] == 'default_app-leaf-dev'
     assert response['Table']['ProvisionedThroughput']['ReadCapacityUnits'] == 5
     assert response['Table']['ProvisionedThroughput']['WriteCapacityUnits'] == 5

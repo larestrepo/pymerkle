@@ -24,8 +24,7 @@ class DynamoDBTree(BaseMerkleTree):
     :param algorithm: [optional] hashing algorithm. Defaults to *sha256*
     :type algorithm: str
     """
-
-    def __init__(self, aws_access_key_id: str, aws_secret_access_key: str, region_name: str = "us-east-2", table_name: str = 'leaf', tags: dict = None, algorithm='sha256', **opts):
+    def __init__(self, aws_access_key_id: str, aws_secret_access_key: str, region_name: str = "us-east-2", table_name: str = 'leaf', tags: dict=None, algorithm='sha256', **opts):
         try:
             self.dynamodb = boto3.client(
                 'dynamodb',
@@ -33,38 +32,47 @@ class DynamoDBTree(BaseMerkleTree):
                 aws_access_key_id=aws_access_key_id,
                 aws_secret_access_key=aws_secret_access_key
             )
-            # create table
-            table_params = {
-                'TableName': table_name,
-                'KeySchema': [
-                    {
-                        'AttributeName': 'id',
-                        'KeyType': 'HASH'
-                    },
-                    {
-                        'AttributeName': 'hash_hex',
-                        'KeyType': 'RANGE'  # Sort key
-                    }
-                ],
-                'AttributeDefinitions': [
-                    {
-                        'AttributeName': 'id',
-                        'AttributeType': 'N'
-                    },
-                    {
-                        'AttributeName': 'hash_hex',
-                        'AttributeType': 'S'
-                    }
-                ],
-                'ProvisionedThroughput': {
-                    'ReadCapacityUnits': 5,
-                    'WriteCapacityUnits': 5
-                }
-            }
-            if tags:
-                table_params['Tags'] = [{'Key': k, 'Value': v} for k, v in tags.items()]
             
-            self.dynamodb.create_table(**table_params)
+            # Check if the table exists
+            table_name = f"{opts.get('app_name', 'default_app')}-{table_name}-{opts.get('env', 'dev')}"
+            try:
+                self.dynamodb.describe_table(TableName=table_name)
+                print(f"Table {table_name} already exists. Using the existing table.")
+            except self.dynamodb.exceptions.ResourceNotFoundException:
+                # Table does not exist, create it
+                table_params = {
+                    'TableName': table_name,
+                    'KeySchema': [
+                        {
+                            'AttributeName': 'id',
+                            'KeyType': 'HASH'
+                        },
+                        {
+                            'AttributeName': 'hash_hex',
+                            'KeyType': 'RANGE'  # Sort key
+                        }
+                    ],
+                    'AttributeDefinitions': [
+                        {
+                            'AttributeName': 'id',
+                            'AttributeType': 'N'
+                        },
+                        {
+                            'AttributeName': 'hash_hex',
+                            'AttributeType': 'S'
+                        }
+                    ],
+                    'ProvisionedThroughput': {
+                        'ReadCapacityUnits': 5,
+                        'WriteCapacityUnits': 5
+                    }
+                }
+                if tags:
+                    table_params['Tags'] = [{'Key': k, 'Value': v} for k, v in tags.items()]
+                
+                self.dynamodb.create_table(**table_params)
+                print(f"Table {table_name} created successfully.")
+                
         except (NoCredentialsError, PartialCredentialsError) as e:
             raise ResponseDynamoDBException(f"Credentials error: {e}")
 

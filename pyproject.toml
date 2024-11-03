@@ -8,12 +8,14 @@ readme = "README.md"
 [tool.poetry.dependencies]
 python = "^3.12"
 cachetools = "^5.5.0"
+boto3 = "^1.35.54"
 
 [tool.poetry.group.dev.dependencies]
 black = "^24.10.0"
 pytest = "^8.3.3"
 flake8 = "^7.1.1"
 bandit = "^1.7.10"
+moto = "^5.0.19"
 
 [build-system]
 requires = ["poetry-core"]

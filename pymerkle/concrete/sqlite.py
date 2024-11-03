@@ -55,17 +55,17 @@ class SqliteTree(BaseMerkleTree):
         else:
             print(f"Database file {self.dbfile} does not exist.")
 
-    def _encode_entry(self, data: Union[Any, bytes]) -> bytes:
-        """
-        Returns the binary format of the provided data entry.
+    # def _encode_entry(self, data: Union[Any, bytes]) -> bytes:
+    #     """
+    #     Returns the binary format of the provided data entry.
 
-        :param data: data to encode
-        :type data: bytes
-        :rtype: bytes
-        """
-        if not isinstance(data, bytes):
-            data.encode('utf-8')
-        return data
+    #     :param data: data to encode
+    #     :type data: bytes
+    #     :rtype: bytes
+    #     """
+    #     if not isinstance(data, bytes):
+    #         data.encode('utf-8')
+    #     return data
 
 
     def _store_leaf(self, data: Any, digest: bytes, digest_hex: str) -> int:
@@ -198,27 +198,27 @@ class SqliteTree(BaseMerkleTree):
         return cur.fetchone()
 
 
-    def _hash_per_chunk(self, entries, chunksize):
-        """
-        Generator yielding in chunks pairs of entry data and hash value.
+    # def _hash_per_chunk(self, entries, chunksize):
+    #     """
+    #     Generator yielding in chunks pairs of entry data and hash value.
 
-        :param entries:
-        :type entries: iterable of bytes
-        :param chunksize:
-        :type chunksize: int
-        """
-        _hash_entry = self.hash_buff
-        _hash_entry_hex = self.hash_hex
+    #     :param entries:
+    #     :type entries: iterable of bytes
+    #     :param chunksize:
+    #     :type chunksize: int
+    #     """
+    #     _hash_entry = self.hash_buff
+    #     _hash_entry_hex = self.hash_hex
 
-        offset = 0
-        chunk = entries[offset: chunksize]
-        while chunk:
-            hashes = [_hash_entry(data) for data in chunk]
-            hashes_hex = [_hash_entry_hex(data) for data in chunk]
-            yield zip(chunk, hashes, hashes_hex)
+    #     offset = 0
+    #     chunk = entries[offset: chunksize]
+    #     while chunk:
+    #         hashes = [_hash_entry(data) for data in chunk]
+    #         hashes_hex = [_hash_entry_hex(data) for data in chunk]
+    #         yield zip(chunk, hashes, hashes_hex)
 
-            offset += chunksize
-            chunk = entries[offset: offset + chunksize]
+    #         offset += chunksize
+    #         chunk = entries[offset: offset + chunksize]
 
 
     def append_entries(self, entries, chunksize=100_000):

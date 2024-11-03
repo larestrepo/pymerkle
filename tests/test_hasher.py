@@ -26,6 +26,16 @@ def test_hash_buff(config):
     payload = data if not security else (prefx00 + data)
     assert h.hash_buff(data) == getattr(module, algorithm)(payload).digest()
 
+@pytest.mark.parametrize('config', all_configs(option))
+def test_hash_hex(config):
+    algorithm = config['algorithm']
+    security = not config['disable_security']
+    h = MerkleHasher(algorithm, security)
+
+    module = sha3 if algorithm.startswith('keccak') else hashlib
+    payload = data if not security else (prefx00 + data)
+    assert h.hash_hex(data) == getattr(module, algorithm)(payload).digest().hex()
+
 
 @pytest.mark.parametrize('config', all_configs(option))
 def test_hash_pair(config):

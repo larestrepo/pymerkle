@@ -1,3 +1,4 @@
+from typing import Any, Union
 from pymerkle.utils import decompose
 from pymerkle.core import BaseMerkleTree
 
@@ -15,11 +16,12 @@ class Node:
     :rtype: Node
     """
 
-    __slots__ = ('digest', 'left', 'right', 'parent')
+    __slots__ = ('digest', 'digest_hex', 'left', 'right', 'parent')
 
 
-    def __init__(self, digest, left=None, right=None):
+    def __init__(self, digest, digest_hex, left=None, right=None):
         self.digest = digest
+        self.digest_hex = digest_hex
 
         self.left = left
         if left:
@@ -151,10 +153,10 @@ class Leaf(Node):
     :type digest: bytes
     """
 
-    def __init__(self, data, digest):
+    def __init__(self, data: bytes, digest: bytes, digest_hex: str):
         self.data = data
 
-        super().__init__(digest, None, None)
+        super().__init__(digest, digest_hex, None, None)
 
 
 class InmemoryTree(BaseMerkleTree):
@@ -186,7 +188,7 @@ class InmemoryTree(BaseMerkleTree):
         return self.root.expand(indent, trim) + '\n'
 
 
-    def _encode_entry(self, data):
+    def _encode_entry(self, data: Union[Any, bytes]):
         """
         Returns the binary format of the provided data entry.
 
@@ -194,10 +196,12 @@ class InmemoryTree(BaseMerkleTree):
         :type data: bytes
         :rtype: bytes
         """
+        if not isinstance(data, bytes):
+            data.encode('utf-8')
         return data
 
 
-    def _store_leaf(self, data, digest):
+    def _store_leaf(self, data: Any, digest: bytes, digest_hex: str) -> int:
         """
         Creates a new leaf storing the provided data entry along with
         its hash value.
@@ -209,7 +213,7 @@ class InmemoryTree(BaseMerkleTree):
         :returns: index of newly appended leaf counting from one
         :rtype: int
         """
-        tail = Leaf(data, digest)
+        tail = Leaf(data, digest, digest_hex)
 
         if not self.leaves:
             self.leaves += [tail]
@@ -221,12 +225,12 @@ class InmemoryTree(BaseMerkleTree):
 
         digest = self._hash_nodes(node.digest, tail.digest)
         if node.is_root():
-            self.root = Node(digest, node, tail)
+            self.root = Node(digest, digest_hex, node, tail)
             index = self._get_size()
             return index
 
         curr = node.parent
-        curr.right = Node(digest, node, tail)
+        curr.right = Node(digest, digest_hex, node, tail)
         curr.right.parent = curr
         while curr:
             curr.digest = self._hash_nodes(
@@ -249,6 +253,19 @@ class InmemoryTree(BaseMerkleTree):
             raise ValueError("%d not in leaf range" % index)
 
         return self.leaves[index - 1].digest
+    
+    def _get_leaf_hex(self, index):
+        """
+        Returns the hash stored at the specified leaf.
+
+        :param index: leaf index counting from one
+        :type index: int
+        :rtype: bytes
+        """
+        if index < 1 or index > len(self.leaves):
+            raise ValueError("%d not in leaf range" % index)
+
+        return self.leaves[index - 1].digest_hex
 
 
     def _get_leaves(self, offset, width):
@@ -262,6 +279,18 @@ class InmemoryTree(BaseMerkleTree):
         :type width: int
         """
         return [l.digest for l in self.leaves[offset: offset + width]]
+    
+    def _get_leaves_hex(self, offset, width):
+        """
+        Returns in respective order the hashes stored by the leaves in the
+        specified range.
+
+        :param offset: starting position counting from zero
+        :type offset: int
+        :param width: number of leaves to consider
+        :type width: int
+        """
+        return [l.digest_hex for l in self.leaves[offset: offset + width]]
 
 
     def _get_size(self):

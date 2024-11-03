@@ -1,6 +1,5 @@
 import itertools
-import pytest
-from pymerkle import constants, InmemoryTree, SqliteTree as _SqliteTree
+from pymerkle import constants, InmemoryTree, SqliteTree as _SqliteTree, DynamoDBTree as _DynamoDBTree
 
 
 DEFAULT_MAXSIZE = 11
@@ -9,6 +8,22 @@ DEFAULT_CAPACITY = 1024 ** 3
 
 
 class SqliteTree(_SqliteTree):
+    """
+    Make init interface identical to that of InmemoryTree so that it can be
+    used interchangeably
+    """
+
+    def __init__(self, algorithm='sha256', **opts):
+        super().__init__(':memory:', algorithm, **opts)
+
+    @classmethod
+    def init_from_entries(cls, entries, algorithm='sha256', **opts):
+        tree = cls(algorithm, **opts)
+        tree.append_entries(entries, chunksize=2)
+
+        return tree
+    
+class DynamoDBTree(_DynamoDBTree):
     """
     Make init interface identical to that of InmemoryTree so that it can be
     used interchangeably

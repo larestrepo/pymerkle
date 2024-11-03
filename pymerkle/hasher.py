@@ -147,3 +147,25 @@ class MerkleHasher:
         :rtype: str
         """
         return self.hash_pair(buff1, buff2).hex()
+    
+    def _hash_per_chunk(self, entries, chunksize):
+        """
+        Generator yielding in chunks pairs of entry data and hash value.
+
+        :param entries:
+        :type entries: iterable of bytes
+        :param chunksize:
+        :type chunksize: int
+        """
+        _hash_entry = self.hash_buff
+        _hash_entry_hex = self.hash_hex
+
+        offset = 0
+        chunk = entries[offset: chunksize]
+        while chunk:
+            hashes = [_hash_entry(data) for data in chunk]
+            hashes_hex = [_hash_entry_hex(data) for data in chunk]
+            yield zip(chunk, hashes, hashes_hex)
+
+            offset += chunksize
+            chunk = entries[offset: offset + chunksize]

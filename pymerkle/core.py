@@ -257,9 +257,8 @@ class BaseMerkleTree(MerkleHasher, metaclass=ABCMeta):
         self.hits = 0
         self.misses = 0
 
-
-    @abstractmethod
-    def _encode_entry(self, data):
+    # @abstractmethod
+    def _encode_entry(self, data: Union[Any, bytes]) -> bytes:
         """
         Should return the binary format of the provided data entry.
 
@@ -267,6 +266,9 @@ class BaseMerkleTree(MerkleHasher, metaclass=ABCMeta):
         :type data: whatever expected according to application logic
         :rtype: bytes
         """
+        if not isinstance(data, bytes):
+            data.encode('utf-8')
+        return data
 
 
     @abstractmethod

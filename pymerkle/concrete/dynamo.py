@@ -77,7 +77,7 @@ class DynamoDBTree(BaseMerkleTree):
             raise ResponseDynamoDBException(f"Credentials error: {e}")
 
         super().__init__(algorithm, **opts)
-        self.table_name = f"{opts.get('app_name', 'default_app')}_{opts.get('env', 'dev')}_{table_name}"
+        self.table_name = table_name
 
 
     def __enter__(self):

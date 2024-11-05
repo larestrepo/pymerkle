@@ -27,6 +27,7 @@ class DynamoDBTree(BaseMerkleTree):
     """
     def __init__(self, aws_access_key_id: str, aws_secret_access_key: str, region_name: str = "us-east-2", table_name: str = 'leaf', tags: dict=None, algorithm='sha256', **opts):
         try:
+            self.create_table = False
             self.dynamodb = boto3.client(
                 'dynamodb',
                 region_name=region_name,
@@ -64,6 +65,7 @@ class DynamoDBTree(BaseMerkleTree):
                     table_params['Tags'] = [{'Key': k, 'Value': v} for k, v in tags.items()]
                 
                 self.dynamodb.create_table(**table_params)
+                self.create = True
                 print(f"Table {table_name} created successfully.")
                 
         except (NoCredentialsError, PartialCredentialsError) as e:

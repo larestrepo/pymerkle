@@ -33,7 +33,7 @@ class MerkleHasher:
         self.prefx01 = b'\x01' if self.security else b''
 
 
-    def _consume_bytes(self, buff) -> bytes:
+    def _consume_bytes(self, buff: bytes) -> bytes:
         """
         :param buff:
         :type buff: bytes

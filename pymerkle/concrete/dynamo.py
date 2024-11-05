@@ -1,3 +1,4 @@
+import binascii
 import boto3
 from botocore.exceptions import NoCredentialsError, PartialCredentialsError
 from typing import Any
@@ -46,20 +47,12 @@ class DynamoDBTree(BaseMerkleTree):
                         {
                             'AttributeName': 'id',
                             'KeyType': 'HASH'
-                        },
-                        {
-                            'AttributeName': 'hash_hex',
-                            'KeyType': 'RANGE'  # Sort key
                         }
                     ],
                     'AttributeDefinitions': [
                         {
                             'AttributeName': 'id',
                             'AttributeType': 'N'
-                        },
-                        {
-                            'AttributeName': 'hash_hex',
-                            'AttributeType': 'S'
                         }
                     ],
                     'ProvisionedThroughput': {
@@ -87,19 +80,7 @@ class DynamoDBTree(BaseMerkleTree):
         self.dynamodb.close()
 
     def delete_db(self):
-        self.dynamodb.delete_table(TableName='leaf')
-
-    # def _encode_entry(self, data: Union[Any, bytes]) -> bytes:
-    #     """
-    #     Returns the binary format of the provided data entry.
-
-    #     :param data: data to encode
-    #     :type data: bytes
-    #     :rtype: bytes
-    #     """
-    #     if not isinstance(data, bytes):
-    #         data.encode('utf-8')
-    #     return data
+        self.dynamodb.delete_table(TableName=self.table_name)
 
     def _store_leaf(self, data: Any, digest: bytes, digest_hex: str) -> int:
         """
@@ -116,11 +97,11 @@ class DynamoDBTree(BaseMerkleTree):
         try:
             new_id = self._get_size() + 1
             self.dynamodb.put_item(
-                TableName='leaf',
+                TableName=self.table_name,
                 Item={
                     'id': {'N': str(new_id)},
-                    'entry': {'B': data},
-                    'hash_bytes': {'B': digest},
+                    'entry': {'S': data },
+                    # 'hash_bytes': {'S': data.hex()},
                     'hash_hex': {'S': digest_hex}
                 }
             )
@@ -139,10 +120,12 @@ class DynamoDBTree(BaseMerkleTree):
         """
         try:
             response = self.dynamodb.get_item(
-                TableName='leaf',
+                TableName=self.table_name,
                 Key={'id': {'N': str(index)}}
             )
-            return response['Item']['hash_bytes']['B']
+            # convert hex to bytes
+            hash_bytes: bytes = binascii.unhexlify(response['Item']['hash_hex']['S'])
+            return hash_bytes
         except Exception as e:
             raise ResponseDynamoDBException(f"Failed to get leaf: {e}")
     
@@ -156,7 +139,7 @@ class DynamoDBTree(BaseMerkleTree):
         """
         try:
             response = self.dynamodb.get_item(
-                TableName='leaf',
+                TableName=self.table_name,
                 Key={'id': {'N': str(index)}}
             )
             return response['Item']['hash_hex']['S']
@@ -175,14 +158,14 @@ class DynamoDBTree(BaseMerkleTree):
         """
         try:
             response = self.dynamodb.scan(
-                TableName='leaf',
+                TableName=self.table_name,
                 FilterExpression='id BETWEEN :start_id AND :end_id',
                 ExpressionAttributeValues={
                     ':start_id': {'N': str(offset + 1)},
                     ':end_id': {'N': str(offset + width)}
                 }
             )
-            return [item['hash_bytes']['B'] for item in response['Items']]
+            return [bytes.fromhex(item['hash_hex']['S']) for item in response['Items']]
         except Exception as e:
             raise ResponseDynamoDBException(f"Failed to get leaves: {e}")
     
@@ -198,7 +181,7 @@ class DynamoDBTree(BaseMerkleTree):
         """
         try:
             response = self.dynamodb.scan(
-                TableName='leaf',
+                TableName=self.table_name,
                 FilterExpression='id BETWEEN :start_id AND :end_id',
                 ExpressionAttributeValues={
                     ':start_id': {'N': str(offset + 1)},
@@ -216,14 +199,15 @@ class DynamoDBTree(BaseMerkleTree):
         """
         try:
             response = self.dynamodb.scan(
-                TableName='leaf',
+                
+                TableName=self.table_name,
                 Select='COUNT'
             )
             return response['Count']
         except Exception as e:
             raise ResponseDynamoDBException(f"Failed to get size: {e}")
 
-    def get_entry(self, index):
+    def get_entry(self, index: int):
         """
         Returns the unhashed data stored at the specified leaf.
 
@@ -233,36 +217,12 @@ class DynamoDBTree(BaseMerkleTree):
         """
         try:
             response = self.dynamodb.get_item(
-                TableName='leaf',
+                TableName=self.table_name,
                 Key={'id': {'N': str(index)}}
             )
-            return response['Item']['entry']['B']
+            return response['Item']['entry']['S']
         except Exception as e:
             raise ResponseDynamoDBException(f"Failed to get entry: {e}")
-
-
-    # def _hash_per_chunk(self, entries, chunksize):
-    #     """
-    #     Generator yielding in chunks pairs of entry data and hash value.
-
-    #     :param entries:
-    #     :type entries: iterable of bytes
-    #     :param chunksize:
-    #     :type chunksize: int
-    #     """
-    #     _hash_entry = self.hash_buff
-    #     _hash_entry_hex = self.hash_hex
-
-    #     offset = 0
-    #     chunk = entries[offset: chunksize]
-    #     while chunk:
-    #         hashes = [_hash_entry(data) for data in chunk]
-    #         hashes_hex = [_hash_entry_hex(data) for data in chunk]
-    #         yield zip(chunk, hashes, hashes_hex)
-
-    #         offset += chunksize
-    #         chunk = entries[offset: offset + chunksize]
-
 
     def append_entries(self, entries, chunksize=100_000):
         """

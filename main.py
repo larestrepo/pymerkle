@@ -1,14 +1,16 @@
-from pymerkle import SqliteTree, verify_consistency, verify_inclusion, MerkleProof
+from pymerkle import SqliteTree, verify_consistency, verify_inclusion, MerkleProof, DynamoDBTree
 from pymerkle.hasher import MerkleHasher
 
 # db_instance = SqliteTree('merkle.db')
 # db_instance.delete_db()
 tree = SqliteTree('merkle.db')
 
-index = tree.append_entry(b'foo')
+
+
+index = tree.append_entry('foo')
 
 data = tree.get_entry(index) # Get the bynary stored in DB
-assert data == b'foo'
+assert data == 'foo'
 
 size = tree.get_size() # Get the number of leaves
 print(size)

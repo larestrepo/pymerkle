@@ -3,6 +3,7 @@ Merkle-tree core functionality
 """
 
 from abc import ABCMeta, abstractmethod
+import binascii
 from collections import deque, namedtuple
 from threading import Lock
 import builtins
@@ -257,7 +258,6 @@ class BaseMerkleTree(MerkleHasher, metaclass=ABCMeta):
         self.hits = 0
         self.misses = 0
 
-    # @abstractmethod
     def _encode_entry(self, data: Union[Any, bytes]) -> bytes:
         """
         Should return the binary format of the provided data entry.
@@ -267,7 +267,19 @@ class BaseMerkleTree(MerkleHasher, metaclass=ABCMeta):
         :rtype: bytes
         """
         if not isinstance(data, bytes):
-            data.encode('utf-8')
+            data = bytes(data, 'utf-8')
+        return data
+    
+    def _decode_entry(self, data: Union[bytes, str]) -> str:
+        """
+        Should return the binary format of the provided data entry.
+
+        :param data: data to encode
+        :type data: whatever expected according to application logic
+        :rtype: bytes
+        """
+        if not isinstance(data, str):
+            data = binascii.hexlify(data).decode('utf-8') 
         return data
 
 

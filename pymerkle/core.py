@@ -112,7 +112,7 @@ class BaseMerkleTree(MerkleHasher, metaclass=ABCMeta):
         digest = self._hash_entry(buffer)
         # digest_hex = self._hash_entry_hex(buffer)
         digest_hex = digest.hex()
-        index = self._store_leaf(data, digest, digest_hex)
+        index = self._store_leaf(data, digest_hex)
 
         return index
 
@@ -267,7 +267,7 @@ class BaseMerkleTree(MerkleHasher, metaclass=ABCMeta):
         :rtype: bytes
         """
         if not isinstance(data, bytes):
-            data = bytes(data, 'utf-8')
+            data = bytes(str(data), 'utf-8')
         return data
     
     def _decode_entry(self, data: Union[bytes, str]) -> str:

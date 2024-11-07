@@ -68,7 +68,7 @@ class SqliteTree(BaseMerkleTree):
     #     return data
 
 
-    def _store_leaf(self, data: Any, digest: bytes, digest_hex: str) -> int:
+    def _store_leaf(self, data: Any, digest_hex: str) -> int:
         """
         Creates a new leaf storing the provided data along with its
         hash value.
@@ -85,9 +85,9 @@ class SqliteTree(BaseMerkleTree):
 
         with self.con:
             query = f'''
-                INSERT INTO leaf(entry, hash_bytes, hash_hex) VALUES (?, ?, ?)
+                INSERT INTO leaf(entry, hash_hex) VALUES (?, ?, ?)
             '''
-            cur.execute(query, (data, digest, digest_hex))
+            cur.execute(query, (data, digest_hex))
 
         return cur.lastrowid
 

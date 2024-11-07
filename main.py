@@ -8,7 +8,20 @@ tree = SqliteTree('merkle.db')
 
 
 
-index = tree.append_entry('foo')
+# Compute hashes
+
+hasher = MerkleHasher(tree.algorithm, tree.security)
+
+hasher_blake = MerkleHasher(tree.algorithm, False) # Create a hasher with a different algorithm
+
+manual_hash = hasher_blake.hash_buff(b"Hello world") # Hash the entry
+print(manual_hash)
+
+manual_hash = hasher_blake.hash_hex(b"Hello world") # Hash the entry
+print(manual_hash)
+
+
+index = tree.append_entry({})
 
 data = tree.get_entry(index) # Get the bynary stored in DB
 assert data == 'foo'
@@ -23,17 +36,6 @@ print(data_hash_hex)
 
 index = tree.get_index_by_digest(data_hash_hex)
 
-# Compute hashes
-
-hasher = MerkleHasher(tree.algorithm, tree.security)
-
-hasher_blake = MerkleHasher(tree.algorithm, False) # Create a hasher with a different algorithm
-
-manual_hash = hasher_blake.hash_buff(b"Hello world") # Hash the entry
-print(manual_hash)
-
-manual_hash = hasher_blake.hash_hex(b"Hello world") # Hash the entry
-print(manual_hash)
 
 # manual_hash_hex = hasher_blake.hash_hex(b"Hello world") # Hash the entry and return it in hexadecimal
 # print(manual_hash_hex)

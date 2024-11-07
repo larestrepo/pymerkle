@@ -19,8 +19,7 @@ class Node:
     __slots__ = ('digest', 'digest_hex', 'left', 'right', 'parent')
 
 
-    def __init__(self, digest, digest_hex, left=None, right=None):
-        self.digest = digest
+    def __init__(self, digest_hex, left=None, right=None):
         self.digest_hex = digest_hex
 
         self.left = left
@@ -153,10 +152,10 @@ class Leaf(Node):
     :type digest: bytes
     """
 
-    def __init__(self, data: bytes, digest: bytes, digest_hex: str):
+    def __init__(self, data: bytes, digest_hex: str):
         self.data = data
 
-        super().__init__(digest, digest_hex, None, None)
+        super().__init__(digest_hex, None, None)
 
 
 class InmemoryTree(BaseMerkleTree):
@@ -201,7 +200,7 @@ class InmemoryTree(BaseMerkleTree):
         return data
 
 
-    def _store_leaf(self, data: Any, digest: bytes, digest_hex: str) -> int:
+    def _store_leaf(self, data: Any, digest_hex: str) -> int:
         """
         Creates a new leaf storing the provided data entry along with
         its hash value.
@@ -213,7 +212,7 @@ class InmemoryTree(BaseMerkleTree):
         :returns: index of newly appended leaf counting from one
         :rtype: int
         """
-        tail = Leaf(data, digest, digest_hex)
+        tail = Leaf(data, digest_hex)
 
         if not self.leaves:
             self.leaves += [tail]

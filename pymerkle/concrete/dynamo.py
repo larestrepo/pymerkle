@@ -1,4 +1,5 @@
 import binascii
+import json
 import boto3
 from botocore.exceptions import NoCredentialsError, PartialCredentialsError
 from typing import Any
@@ -27,7 +28,7 @@ class DynamoDBTree(BaseMerkleTree):
     """
     def __init__(self, aws_access_key_id: str, aws_secret_access_key: str, region_name: str = "us-east-2", table_name: str = 'leaf', tags: dict=None, algorithm='sha256', **opts):
         try:
-            self.create_table = False
+            self.table_flag = False
             self.dynamodb = boto3.client(
                 'dynamodb',
                 region_name=region_name,
@@ -64,7 +65,7 @@ class DynamoDBTree(BaseMerkleTree):
                 if tags:
                     table_params['Tags'] = [{'Key': k, 'Value': v} for k, v in tags.items()]
                 
-                self.dynamodb.create_table(**table_params)
+                self.dynamodb.table_flag(**table_params)
                 self.create = True
                 print(f"Table {table_name} created successfully.")
                 
@@ -84,7 +85,7 @@ class DynamoDBTree(BaseMerkleTree):
     def delete_db(self):
         self.dynamodb.delete_table(TableName=self.table_name)
 
-    def _store_leaf(self, data: Any, digest: bytes, digest_hex: str) -> int:
+    def _store_leaf(self, data: Any, digest_hex: str) -> int:
         """
         Creates a new leaf storing the provided data along with its
         hash value.
@@ -102,7 +103,7 @@ class DynamoDBTree(BaseMerkleTree):
                 TableName=self.table_name,
                 Item={
                     'id': {'N': str(new_id)},
-                    'entry': {'S': data },
+                    'entry': {'S': json.dumps(data)},
                     # 'hash_bytes': {'S': data.hex()},
                     'hash_hex': {'S': digest_hex}
                 }
@@ -257,7 +258,7 @@ class DynamoDBTree(BaseMerkleTree):
             raise ResponseDynamoDBException(f"Failed to append entries: {e}")
 
 
-    def get_index_by_digest(self, digest_hex: str):
+    def get_index_by_digest_hex(self, digest_hex: str) -> None | int:
         """
         Returns the index (id) where the hash_hex is equal to the provided digest_hex.
 

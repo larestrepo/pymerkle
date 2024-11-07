@@ -255,3 +255,32 @@ class DynamoDBTree(BaseMerkleTree):
             return last_id
         except Exception as e:
             raise ResponseDynamoDBException(f"Failed to append entries: {e}")
+
+
+    def get_index_by_digest(self, digest_hex: str):
+        """
+        Returns the index (id) where the hash_hex is equal to the provided digest_hex.
+
+        :param digest_hex: The hexadecimal digest to search for
+        :type digest_hex: str
+        :return: The index (id) if found, None otherwise
+        :rtype: int or None
+        """
+        try:
+            # Scan for the item with matching hash_hex
+            response = self.dynamodb.scan(
+                TableName=self.table_name,
+                FilterExpression="hash_hex = :digest_hex",
+                ExpressionAttributeValues={":digest_hex": {'S': digest_hex}}
+            )
+
+            # Check if any items were found
+            items = response.get('Items', [])
+            if not items:
+                return None
+
+            # Return the id (assuming it's unique)
+            return int(items[0]['id']['N'])
+
+        except Exception as e:
+            raise ResponseDynamoDBException(f"Failed to retrieve index by digest: {e}")

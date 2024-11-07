@@ -7,6 +7,7 @@ tree = SqliteTree('merkle.db')
 
 
 
+
 index = tree.append_entry('foo')
 
 data = tree.get_entry(index) # Get the bynary stored in DB
@@ -19,6 +20,8 @@ data_hash = tree.get_leaf(index) # Get the hash of the leaf
 print(data_hash)
 data_hash_hex = tree.get_leaf_hex(index) # Get the hash of the leaf
 print(data_hash_hex)
+
+index = tree.get_index_by_digest(data_hash_hex)
 
 # Compute hashes
 

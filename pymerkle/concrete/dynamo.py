@@ -63,7 +63,7 @@ class DynamoDBTree(BaseMerkleTree):
                 }
                 if tags:
                     table_params['Tags'] = [{'Key': k, 'Value': v} for k, v in tags.items()]
-                
+                self.dynamodb.create_table(**table_params)
                 self.create = True
                 print(f"Table {table_name} created successfully.")
                 
@@ -254,6 +254,31 @@ class DynamoDBTree(BaseMerkleTree):
         except Exception as e:
             raise ResponseDynamoDBException(f"Failed to append entries: {e}")
 
+    def update_item_by_index(self, index: int, update_data: dict) -> bool:
+        """
+        Updates an item in the DynamoDB table where the index is equal to the provided value.
+
+        :param index: The index of the item to update
+        :type index: int
+        :param update_data: A dictionary of the attributes to update
+        :type update_data: dict
+        :return: True if the update was successful, False otherwise
+        :rtype: bool
+        """
+        try:
+            update_expression = "SET " + ", ".join(f"{k} = :{k}" for k in update_data.keys())
+            expression_attribute_values = {f":{k}": {'S': json.dumps(v) if isinstance(v, dict) else v} for k, v in update_data.items()}
+
+            self.dynamodb.update_item(
+                TableName=self.table_name,
+                Key={'id': {'N': str(index)}},
+                UpdateExpression=update_expression,
+                ExpressionAttributeValues=expression_attribute_values
+            )
+            return True
+        except Exception as e:
+            print(f"Failed to update item: {e}")
+            return False
 
     def get_index_by_digest_hex(self, digest_hex: str) -> None | int:
         """

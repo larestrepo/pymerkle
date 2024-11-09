@@ -5,8 +5,22 @@ from pymerkle.hasher import MerkleHasher
 
 # db_instance = SqliteTree('merkle.db')
 # db_instance.delete_db()
-tree = SqliteTree('merkle.db')
+# tree = SqliteTree('merkle.db')
 
+
+opts = { "app_name": "s", "env": "internal" }
+
+tree = DynamoDBTree(aws_access_key_id=AWS_ACCESS_KEY_ID, aws_secret_access_key=AWS_SECRET_ACCESS_KEY, **opts)
+
+# index = tree.get_index_by_digest_hex("5499")
+
+# data_hash_hex = tree.get_leaf_hex(index) 
+
+
+proof = tree.prove_inclusion(3)  # Get the inclusion proof
+
+update_data = {"proof": proof.serialize()}
+result = tree.update_item_by_index(3, update_data)
 
 # index = tree.append_entry({"foo": "bar"})  # Append an entry
 # index = tree.append_entry({"foo": "bar1"})  # Append an entry
@@ -53,7 +67,7 @@ print(inclusion)
 # print(manual_hash)
 
 
-# index = tree.append_entry({"foo": "bar2"})  # Append an entry
+index = tree.append_entry({"foo": "bar2"})  # Append an entry
 
 # data = tree.get_entry(index)  # Get the bynary stored in DB
 # # assert data == 'foo'
@@ -73,12 +87,12 @@ an inclusion proof is a path of hashes proving that a certain data entry has bee
 and that the tree has not been afterwards tampered. Below the inclusion proof for the 3-rd entry against 
 the state corresponding to the first 5 leaves:"""
 
-proof = tree.prove_inclusion(index, size)  # Get the inclusion proof
+proof = tree.prove_inclusion(index)  # Get the inclusion proof
 print(proof.serialize())
 # Verification
 base = tree.get_leaf(index)
 print(base)
-root = tree.get_state(size)
+root = tree.get_state()
 print(root)
 
 inclusion = verify_inclusion(base, root, proof)

@@ -1,4 +1,5 @@
 import hashlib
+from typing import Any, Union
 from pymerkle import constants
 
 
@@ -32,7 +33,6 @@ class MerkleHasher:
         self.prefx00 = b'\x00' if self.security else b''
         self.prefx01 = b'\x01' if self.security else b''
 
-
     def _consume_bytes(self, buff: bytes) -> bytes:
         """
         :param buff:
@@ -50,7 +50,18 @@ class MerkleHasher:
             chunk = buff[offset: offset + chunksize]
 
         return hasher.digest()
+    
+    def _encode_entry(self, data: Union[Any, bytes]) -> bytes:
+        """
+        Should return the binary format of the provided data entry.
 
+        :param data: data to encode
+        :type data: whatever expected according to application logic
+        :rtype: bytes
+        """
+        if not isinstance(data, bytes):
+            data = bytes(str(data), 'utf-8')
+        return data
 
     def hash_empty(self) -> bytes:
         """
@@ -62,7 +73,7 @@ class MerkleHasher:
         :rtype: bytes
         """
         return self._consume_bytes(b'')
-    
+
     def hash_empty_hex(self) -> str:
         """
         Computes the hash of the empty data without prepending security
@@ -74,7 +85,6 @@ class MerkleHasher:
         """
         return self.hash_empty().hex()
 
-
     def hash_raw(self, buff: bytes) -> bytes:
         """
         Computes the hash of the provided data without prepending security
@@ -85,7 +95,7 @@ class MerkleHasher:
         :rtype: bytes
         """
         return self._consume_bytes(buff)
-    
+
     def hash_raw_hex(self, buff: bytes) -> str:
         """
         Computes the hash of the provided data without prepending security
@@ -96,7 +106,6 @@ class MerkleHasher:
         :rtype: str
         """
         return self.hash_raw(buff).hex()
-
 
     def hash_buff(self, data: bytes) -> bytes:
         """
@@ -117,8 +126,8 @@ class MerkleHasher:
         :type data: bytes
         :rtype: str
         """
-        return self.hash_buff(data).hex()
-
+        buffer = self._encode_entry(data)
+        return self.hash_buff(buffer).hex()
 
     def hash_pair(self, buff1, buff2) -> bytes:
         """
@@ -133,8 +142,7 @@ class MerkleHasher:
         :rtype: bytes
         """
         return self.hashfunc(self.prefx01 + buff1 + buff2).digest()
-    
-    
+
     def hash_pair_hex(self, buff1, buff2) -> str:
         """
         Computes the hash of the concatenation of the provided binary data and
@@ -147,7 +155,7 @@ class MerkleHasher:
         :rtype: str
         """
         return self.hash_pair(buff1, buff2).hex()
-    
+
     def _hash_per_chunk(self, entries, chunksize):
         """
         Generator yielding in chunks pairs of entry data and hash value.

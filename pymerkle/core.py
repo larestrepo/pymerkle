@@ -258,17 +258,17 @@ class BaseMerkleTree(MerkleHasher, metaclass=ABCMeta):
         self.hits = 0
         self.misses = 0
 
-    def _encode_entry(self, data: Union[Any, bytes]) -> bytes:
-        """
-        Should return the binary format of the provided data entry.
+    # def _encode_entry(self, data: Union[Any, bytes]) -> bytes:
+    #     """
+    #     Should return the binary format of the provided data entry.
 
-        :param data: data to encode
-        :type data: whatever expected according to application logic
-        :rtype: bytes
-        """
-        if not isinstance(data, bytes):
-            data = bytes(str(data), 'utf-8')
-        return data
+    #     :param data: data to encode
+    #     :type data: whatever expected according to application logic
+    #     :rtype: bytes
+    #     """
+    #     if not isinstance(data, bytes):
+    #         data = bytes(str(data), 'utf-8')
+    #     return data
     
     def _decode_entry(self, data: Union[bytes, str]) -> str:
         """
@@ -440,7 +440,8 @@ class BaseMerkleTree(MerkleHasher, metaclass=ABCMeta):
         while len(subroots) > 1:
             lnode = pop()
             rnode = pop()
-            node = hashfunc(prefx01 + rnode + lnode).digest()
+            node = hashfunc(prefx01 + lnode + rnode).digest()
+            print(rnode, lnode, node)
             append(node)
 
         return subroots[0]

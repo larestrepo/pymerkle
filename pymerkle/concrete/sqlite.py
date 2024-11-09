@@ -1,3 +1,4 @@
+import json
 import sqlite3
 from typing import Any, Union
 from pymerkle.core import BaseMerkleTree
@@ -85,9 +86,9 @@ class SqliteTree(BaseMerkleTree):
 
         with self.con:
             query = f'''
-                INSERT INTO leaf(entry, hash_hex) VALUES (?, ?, ?)
+                INSERT INTO leaf(entry, hash_hex) VALUES (?, ?)
             '''
-            cur.execute(query, (data, digest_hex))
+            cur.execute(query, (json.dumps(data), digest_hex))
 
         return cur.lastrowid
 
@@ -103,7 +104,7 @@ class SqliteTree(BaseMerkleTree):
         cur = self.cur
 
         query = f'''
-            SELECT hash_bytes FROM leaf WHERE id = ?
+            SELECT hash_hex FROM leaf WHERE id = ?
         '''
         cur.execute(query, (index,))
 
@@ -139,7 +140,7 @@ class SqliteTree(BaseMerkleTree):
         cur = self.cur
 
         query = f'''
-            SELECT hash_bytes FROM leaf WHERE id BETWEEN ? AND ?
+            SELECT hash_hex FROM leaf WHERE id BETWEEN ? AND ?
         '''
         cur.execute(query, (offset + 1, offset + width))
 
@@ -237,13 +238,13 @@ class SqliteTree(BaseMerkleTree):
 
         with self.con:
             query = f'''
-                INSERT INTO leaf(entry, hash_bytes, hash_hex) VALUES (?, ?, ?)
+                INSERT INTO leaf(entry, hash_hex) VALUES (?, ?)
             '''
             for chunk in self._hash_per_chunk(entries, chunksize):
                 cur.execute('BEGIN TRANSACTION')
 
-                for (data, digest, hash_hex) in chunk:
-                    cur.execute(query, (data, digest, hash_hex))
+                for (data, hash_hex) in chunk:
+                    cur.execute(query, (data, hash_hex))
 
                 cur.execute('END TRANSACTION')
 

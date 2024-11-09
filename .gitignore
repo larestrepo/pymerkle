@@ -26,3 +26,4 @@ profiler/.results/
 mprofile_*
 merkle.db
 .vscode/
+main.py

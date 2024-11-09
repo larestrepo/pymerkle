@@ -71,7 +71,7 @@ class DynamoDBTree(BaseMerkleTree):
                 
         except (NoCredentialsError, PartialCredentialsError) as e:
             raise ResponseDynamoDBException(f"Credentials error: {e}")
-
+        # opts = {'disable_security': True}
         super().__init__(algorithm, **opts)
         self.table_name = table_name
 
@@ -168,7 +168,7 @@ class DynamoDBTree(BaseMerkleTree):
                     ':end_id': {'N': str(offset + width)}
                 }
             )
-            return [bytes.fromhex(item['hash_hex']['S']) for item in response['Items']]
+            return [binascii.unhexlify(item['hash_hex']['S']) for item in response['Items']]
         except Exception as e:
             raise ResponseDynamoDBException(f"Failed to get leaves: {e}")
     

@@ -170,9 +170,9 @@ class MerkleProof:
             next_bit, digest = path[index + 1]
 
             if bit == 0:
-                result = hash_pair(result, digest)
-            elif bit == 1:
                 result = hash_pair(digest, result)
+            elif bit == 1:
+                result = hash_pair(result, digest)
             else:
                 raise ValueError('Invalid bit found')
 

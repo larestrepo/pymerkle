@@ -441,7 +441,6 @@ class BaseMerkleTree(MerkleHasher, metaclass=ABCMeta):
             lnode = pop()
             rnode = pop()
             node = hashfunc(prefx01 + lnode + rnode).digest()
-            print(rnode, lnode, node)
             append(node)
 
         return subroots[0]

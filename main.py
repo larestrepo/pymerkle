@@ -5,7 +5,8 @@ from pymerkle.hasher import MerkleHasher
 
 # db_instance = SqliteTree('merkle.db')
 # db_instance.delete_db()
-# tree = SqliteTree('merkle.db')
+tree = SqliteTree('merkle.db')
+
 
 # index = tree.append_entry({"foo": "bar"})  # Append an entry
 # index = tree.append_entry({"foo": "bar1"})  # Append an entry

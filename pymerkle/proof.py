@@ -26,13 +26,16 @@ def verify_inclusion(base: bytes, root: bytes, proof):
     :type proof: MerkleProof
     :raises InvalidProof: if the proof is found invalid
     """
+    inclusion = True
     if not compare_digest(proof.path[0], base):
-        raise InvalidProof('Base hash does not match')
+        # raise InvalidProof('Base hash does not match')
+        inclusion = False
 
     if not compare_digest(proof.resolve(), root):
-        raise InvalidProof('State does not match')
+        # raise InvalidProof('State does not match')
+        inclusion = False
     
-    return True
+    return inclusion
 
 
 def verify_consistency(state1: bytes, state2: bytes, proof):
@@ -47,13 +50,16 @@ def verify_consistency(state1: bytes, state2: bytes, proof):
     :param proof: proof of consistency
     :type proof: MerkleProof
     """
+    consistency = True
     if not compare_digest(proof.retrieve_prior_state(), state1):
-        raise InvalidProof('Prior state does not match')
+        # raise InvalidProof('Prior state does not match')
+        consistency = False
 
     if not compare_digest(proof.resolve(), state2):
-        raise InvalidProof('Later state does not match')
+        # raise InvalidProof('Later state does not match')
+        consistency = False
 
-    return True
+    return consistency
 
 class MerkleProof:
     """

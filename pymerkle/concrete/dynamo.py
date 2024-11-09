@@ -28,7 +28,6 @@ class DynamoDBTree(BaseMerkleTree):
     """
     def __init__(self, aws_access_key_id: str, aws_secret_access_key: str, region_name: str = "us-east-2", table_name: str = 'leaf', tags: dict=None, algorithm='sha256', **opts):
         try:
-            self.table_flag = False
             self.dynamodb = boto3.client(
                 'dynamodb',
                 region_name=region_name,
@@ -65,13 +64,11 @@ class DynamoDBTree(BaseMerkleTree):
                 if tags:
                     table_params['Tags'] = [{'Key': k, 'Value': v} for k, v in tags.items()]
                 
-                self.dynamodb.table_flag(**table_params)
                 self.create = True
                 print(f"Table {table_name} created successfully.")
                 
         except (NoCredentialsError, PartialCredentialsError) as e:
             raise ResponseDynamoDBException(f"Credentials error: {e}")
-        # opts = {'disable_security': True}
         super().__init__(algorithm, **opts)
         self.table_name = table_name
 
@@ -284,4 +281,5 @@ class DynamoDBTree(BaseMerkleTree):
             return int(items[0]['id']['N'])
 
         except Exception as e:
-            raise ResponseDynamoDBException(f"Failed to retrieve index by digest: {e}")
+            print(f"Failed to retrieve index by digest: {e}")
+            return None

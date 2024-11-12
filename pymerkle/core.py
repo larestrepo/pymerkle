@@ -440,7 +440,7 @@ class BaseMerkleTree(MerkleHasher, metaclass=ABCMeta):
         while len(subroots) > 1:
             lnode = pop()
             rnode = pop()
-            node = hashfunc(prefx01 + lnode + rnode).digest()
+            node = hashfunc(prefx01 + rnode + lnode).digest()
             append(node)
 
         return subroots[0]

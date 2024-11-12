@@ -165,7 +165,8 @@ class DynamoDBTree(BaseMerkleTree):
                     ':end_id': {'N': str(offset + width)}
                 }
             )
-            return [binascii.unhexlify(item['hash_hex']['S']) for item in response['Items']]
+            sorted_items = sorted(response['Items'], key=lambda x: int(x['id']['N']))
+            return [binascii.unhexlify(item['hash_hex']['S']) for item in sorted_items]
         except Exception as e:
             raise ResponseDynamoDBException(f"Failed to get leaves: {e}")
     

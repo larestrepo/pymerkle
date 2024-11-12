@@ -7,51 +7,73 @@ from pymerkle.hasher import MerkleHasher
 # db_instance.delete_db()
 # tree = SqliteTree('merkle.db')
 
+# def strtree(tree):
+#     if isinstance(tree, SqliteTree):
+#         entries = [tree.get_entry(index) for index in range(1, tree.get_size()
+#             + 1)]
+#         tree = InmemoryTree.init_from_entries(entries)
 
-opts = { "app_name": "s", "env": "internal" }
-
-tree = DynamoDBTree(aws_access_key_id=AWS_ACCESS_KEY_ID, aws_secret_access_key=AWS_SECRET_ACCESS_KEY, **opts)
-
-# index = tree.get_index_by_digest_hex("5499")
-
-# data_hash_hex = tree.get_leaf_hex(index) 
+#     return str(tree)
 
 
-proof = tree.prove_inclusion(3)  # Get the inclusion proof
 
-update_data = {"proof": proof.serialize()}
-result = tree.update_item_by_index(3, update_data)
+opts = {"app_name": "a", "env": "internal"}
 
-# index = tree.append_entry({"foo": "bar"})  # Append an entry
-# index = tree.append_entry({"foo": "bar1"})  # Append an entry
-# index = tree.append_entry({"foo": "bar2"})  # Append an entry
+tree = DynamoDBTree(aws_access_key_id=AWS_ACCESS_KEY_ID,
+                    aws_secret_access_key=AWS_SECRET_ACCESS_KEY, **opts)
 
-hasher = MerkleHasher('sha256', True)
-# variable = bytes(json.dumps({"foo": "bar"}), "utf-8")
-variable1 = "541cb756c815f82eb1b07795139b2538f3ef93fc6921e4921fa8f7b95890cbdf"
-variable2 = "b0e2e6960723f0e99306f51f5f9ab59fcfccbb33647f9b2350d8749c567e3f76"
-variable3 = "6f89ede39294521a69db0ceb0a2aef77ea05b55a1490cb0a04241e32b6b6d301"
-variable1 = binascii.unhexlify(variable1)
-variable2 = binascii.unhexlify(variable2)
-variable3 = binascii.unhexlify(variable3)
-print(variable1)
-print(variable2)
-print(variable3)
-hash_pair1 = hasher.hash_pair(variable2, variable1)
-print(hash_pair1)
-hash_pair2 = hasher.hash_pair(variable3, hash_pair1)
-print(hash_pair2)
-proof = tree.prove_inclusion(3)  # Get the inclusion proof
+
+hasher = MerkleHasher(tree.algorithm, tree.security)
+entry = {"foo4": "bar"}
+encode_entry = tree._encode_entry(entry)
+hash_bytes = tree._hash_entry(encode_entry)
+hex_entry = hash_bytes.hex()
+print(hash_bytes)
+print(hex_entry)
+
+# index = tree.append_entry(entry)
+# hash_bytes = hasher.hash_buff(entry)
+
+
+proof = tree.prove_inclusion(1)
 print(proof.serialize())
-# Verification
-base = tree.get_leaf(3)
-print(base)
+
 root = tree.get_state()
 print(root)
 
-inclusion = verify_inclusion(base, root, proof)
-print(inclusion)
-print(inclusion)
+base = tree.get_leaf(1)
+print(base)
+
+
+result = verify_inclusion(base, root, proof)
+
+print(result)
+
+# variable = bytes(json.dumps({"foo": "bar"}), "utf-8")
+# variable1 = "541cb756c815f82eb1b07795139b2538f3ef93fc6921e4921fa8f7b95890cbdf"
+# variable2 = "b0e2e6960723f0e99306f51f5f9ab59fcfccbb33647f9b2350d8749c567e3f76"
+# variable3 = "6f89ede39294521a69db0ceb0a2aef77ea05b55a1490cb0a04241e32b6b6d301"
+# variable1 = binascii.unhexlify(variable1)
+# variable2 = binascii.unhexlify(variable2)
+# variable3 = binascii.unhexlify(variable3)
+# print(variable1)
+# print(variable2)
+# print(variable3)
+# hash_pair1 = hasher.hash_pair(variable2, variable1)
+# print(hash_pair1)
+# hash_pair2 = hasher.hash_pair(variable3, hash_pair1)
+# print(hash_pair2)
+# proof = tree.prove_inclusion(3)  # Get the inclusion proof
+# print(proof.serialize())
+# # Verification
+# base = tree.get_leaf(3)
+# print(base)
+# root = tree.get_state()
+# print(root)
+
+# inclusion = verify_inclusion(base, root, proof)
+# print(inclusion)
+# print(inclusion)
 
 # Compute hashes
 
@@ -67,7 +89,7 @@ print(inclusion)
 # print(manual_hash)
 
 
-index = tree.append_entry({"foo": "bar2"})  # Append an entry
+# index = tree.append_entry({"foo": "bar2"})  # Append an entry
 
 # data = tree.get_entry(index)  # Get the bynary stored in DB
 # # assert data == 'foo'
@@ -87,17 +109,18 @@ an inclusion proof is a path of hashes proving that a certain data entry has bee
 and that the tree has not been afterwards tampered. Below the inclusion proof for the 3-rd entry against 
 the state corresponding to the first 5 leaves:"""
 
-proof = tree.prove_inclusion(index)  # Get the inclusion proof
-print(proof.serialize())
-# Verification
-base = tree.get_leaf(index)
-print(base)
-root = tree.get_state()
-print(root)
+# index = 2
+# proof = tree.prove_inclusion(index)  # Get the inclusion proof
+# print(proof.serialize())
+# # Verification
+# base = tree.get_leaf(index)
+# print(base)
+# root = tree.get_state()
+# print(root)
 
-inclusion = verify_inclusion(base, root, proof)
-print(inclusion)
-print(inclusion)
+# inclusion = verify_inclusion(base, root, proof)
+# print(inclusion)
+# print(inclusion)
 
 # manual_hash_hex = hasher_blake.hash_hex(b"Hello world") # Hash the entry and return it in hexadecimal
 # print(manual_hash_hex)
@@ -143,18 +166,18 @@ print(inclusion)
 of the first, i.e., that the tree has not been tampered with in the meanwhile. 
 Below the consistency proof for the states with three and five leaves respectively:"""
 
-state1 = tree.get_state(3)
-state2 = tree.get_state(4)
+# state1 = tree.get_state(3)
+# state2 = tree.get_state(4)
 
-proof = tree.prove_consistency(3, 4)  # Get the consistency proof
+# proof = tree.prove_consistency(3, 4)  # Get the consistency proof
 
-consistency = verify_consistency(state1, state2, proof)
-print(consistency)
+# consistency = verify_consistency(state1, state2, proof)
+# print(consistency)
 
-# Serialization
+# # Serialization
 
-proof_bytes = proof.serialize()  # Serialize the proof
-print(proof_bytes)
+# proof_bytes = proof.serialize()  # Serialize the proof
+# print(proof_bytes)
 
-proof_copy = MerkleProof.deserialize(proof_bytes)  # Deserialize the proof
-print(proof_copy)
+# proof_copy = MerkleProof.deserialize(proof_bytes)  # Deserialize the proof
+# print(proof_copy)
